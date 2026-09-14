@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // Client constants
@@ -25,6 +26,8 @@ type Client struct {
 	RemoteAddr    net.Addr
 	SimulateRelay bool
 	RelayOptions  dhcpv6.Options // These options will be added to relay message if SimulateRelay is true
+	DUIDLL        bool           // Use DUIDLL instead of DUIDLLT
+	RequestPD     bool           // Request Prefix Delegation
 }
 
 // NewClient returns a Client with default settings
@@ -214,6 +217,35 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// 如果需要请求前缀委派，插入 IA_PD 选项。
+	// IA_PD 的 IAID 使用接口 MAC 地址的后四个字节。
+	if c.DUIDLL || c.RequestPD {
+		hw := iface.HardwareAddr
+		if len(hw) < 4 {
+			return nil, nil, fmt.Errorf("hardware address too short for IA_PD IAID: %v", hw)
+		}
+		if c.DUIDLL {
+			fixedDUID := &dhcpv6.DUIDLL{
+				HWType:        iana.HWTypeEthernet,
+				LinkLayerAddr: iface.HardwareAddr,
+			}
+			dhcpv6.WithClientID(fixedDUID)(solicit)
+		}
+
+		if c.RequestPD {
+			var pdIAID [4]byte
+			copy(pdIAID[:], hw[len(hw)-4:])
+
+			iapd := &dhcpv6.OptIAPD{
+				IaId: pdIAID,
+				T1:   0, // 0 表示由服务器在 Advertise/Reply 中决定
+				T2:   0,
+			}
+			solicit.AddOption(iapd)
+		}
+	}
+
 	for _, mod := range modifiers {
 		mod(solicit)
 	}

@@ -20,6 +20,9 @@ func main() {
 	// address
 	client := client6.NewClient()
 
+	client.DUIDLL = true
+	client.RequestPD = true
+
 	// Exchange runs a Solicit-Advertise-Request-Reply transaction on the
 	// specified network interface, and returns a list of DHCPv6 packets
 	// (a "conversation") and an error if any. Notice that Exchange may
