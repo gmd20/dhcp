@@ -9,8 +9,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/insomniacslk/dhcp/interfaces"
-	"github.com/insomniacslk/dhcp/internal/xsocket"
+	"github.com/gmd20/dhcp/interfaces"
+	"github.com/gmd20/dhcp/internal/xsocket"
 	"golang.org/x/sys/unix"
 )
 

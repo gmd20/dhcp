@@ -9,8 +9,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/insomniacslk/dhcp/internal/xsocket"
+	"github.com/gmd20/dhcp/dhcpv4"
+	"github.com/gmd20/dhcp/internal/xsocket"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/sys/unix"
 )

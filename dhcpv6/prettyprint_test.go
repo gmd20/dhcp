@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/gmd20/dhcp/dhcpv4"
+	"github.com/gmd20/dhcp/iana"
 )
 
 func TestPrint(t *testing.T) {

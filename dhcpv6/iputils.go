@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/gmd20/dhcp/iana"
 )
 
 // InterfaceAddresses is used to fetch addresses of an interface with given name
