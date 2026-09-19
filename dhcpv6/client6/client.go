@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/gmd20/dhcp/dhcpv6"
+	"github.com/gmd20/dhcp/iana"
 )
 
 // Client constants
@@ -28,6 +28,7 @@ type Client struct {
 	RelayOptions  dhcpv6.Options // These options will be added to relay message if SimulateRelay is true
 	DUIDLL        bool           // Use DUIDLL instead of DUIDLLT
 	RequestPD     bool           // Request Prefix Delegation
+	OnlyPD        bool           // Request Prefix Delegation only
 }
 
 // NewClient returns a Client with default settings
@@ -205,10 +206,57 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	return adv, nil
 }
 
+func (c *Client) SolicitOnlyPD(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(iface.HardwareAddr) < 4 {
+		return nil, nil, errors.New("short hardware addrss: less than 4 bytes")
+	}
+
+	duid := &dhcpv6.DUIDLL{
+		HWType:        iana.HWTypeEthernet,
+		LinkLayerAddr: iface.HardwareAddr,
+	}
+	solicit, err := dhcpv6.NewMessage()
+	if err != nil {
+		return nil, nil, err
+	}
+	solicit.MessageType = dhcpv6.MessageTypeSolicit
+	solicit.AddOption(dhcpv6.OptClientID(duid))
+	solicit.AddOption(dhcpv6.OptRequestedOption(
+		dhcpv6.OptionDNSRecursiveNameServer,
+		dhcpv6.OptionDomainSearchList,
+	))
+	solicit.AddOption(dhcpv6.OptElapsedTime(0))
+
+	var pdIAID [4]byte
+	copy(pdIAID[:], iface.HardwareAddr[len(iface.HardwareAddr)-4:])
+	iapd := &dhcpv6.OptIAPD{
+		IaId: pdIAID,
+		T1:   0, // 0 表示由服务器在 Advertise/Reply 中决定
+		T2:   0,
+	}
+	solicit.AddOption(iapd)
+
+	// Apply modifiers
+	for _, mod := range modifiers {
+		mod(solicit)
+	}
+
+	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone)
+	return solicit, advertise, err
+}
+
 // Solicit sends a Solicit, returns the Solicit, an Advertise (if not nil), and
 // an error if any. The modifiers will be applied to the Solicit before sending
 // it, see modifiers.go
 func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
+	if c.OnlyPD {
+		return c.SolicitOnlyPD(ifname, modifiers...)
+	}
+
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, nil, err

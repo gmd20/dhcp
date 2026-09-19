@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/insomniacslk/dhcp/dhcpv6/client6"
+	"github.com/gmd20/dhcp/dhcpv6/client6"
 )
 
 var (
@@ -22,6 +22,7 @@ func main() {
 
 	client.DUIDLL = true
 	client.RequestPD = true
+	client.OnlyPD = true
 
 	// Exchange runs a Solicit-Advertise-Request-Reply transaction on the
 	// specified network interface, and returns a list of DHCPv6 packets

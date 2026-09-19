@@ -496,10 +496,9 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 	req.AddOption(OptElapsedTime(0))
 	// add IA_NA
 	iana := adv.Options.OneIANA()
-	if iana == nil {
-		return nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
+	if iana != nil {
+		req.AddOption(iana)
 	}
-	req.AddOption(iana)
 	// add IA_PD
 	if iaPd := adv.GetOneOption(OptionIAPD); iaPd != nil {
 		req.AddOption(iaPd)
